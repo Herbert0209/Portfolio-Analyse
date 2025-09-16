@@ -38,8 +38,10 @@ class PortfolioAnalyzer:
             try:
                 ticker = yf.Ticker(stock)
                 data = ticker.history(start=self.start_date, end=self.end_date)
+                info = ticker.info
+                name = info.get('longName') or info.get('shortName') or stock
                 portfolio_data[stock] = data['Close']
-                print(f"✓ {stock} data fetched")
+                print(f"✓ {name} ({stock}) data fetched")
             except Exception as e:
                 print(f"✗ Error fetching {stock}: {e}")
         try:
@@ -49,7 +51,14 @@ class PortfolioAnalyzer:
             print("✓ S&P 500 (SPY) data fetched")
         except Exception as e:
             print(f"✗ Error fetching S&P 500: {e}")
-        self.stock_data = pd.DataFrame(portfolio_data).dropna()
+        # Remove timezone info from each series before combining
+        for stock in portfolio_data:
+            if portfolio_data[stock].index.tz is not None:
+                portfolio_data[stock].index = portfolio_data[stock].index.tz_localize(None)
+        self.stock_data = pd.DataFrame(portfolio_data)
+        self.stock_data = self.stock_data.dropna()
+        if self.stock_data.empty:
+            print("\n[WARNING] No overlapping data for all tickers in the selected date range. Try a more recent start_date or check ticker data on Yahoo Finance.")
         self.stock_data.index = self.stock_data.index.tz_localize(None)
         self.benchmark_data.index = self.benchmark_data.index.tz_localize(None)
         return self.stock_data, self.benchmark_data
@@ -177,35 +186,52 @@ class PortfolioAnalyzer:
             print(f"Error during analysis: {e}")
             return None
 
-# Example ISIN to ticker mapping (add your own as needed)
-isin_to_ticker = {
-    "US0378331005": "AAPL",  # Apple
-    "US5949181045": "MSFT",  # Microsoft
-    "US02079K3059": "GOOGL",  # Alphabet (Google)
-    "US67066G1040": "NVDA",  # NVIDIA
-    "US88160R1014": "TSLA",  # Tesla
-    # Add more ISINs and tickers as needed
-}
-
-# Example usage with ISINs
+# Example usage
 if __name__ == "__main__":
-    tech_portfolio_isin = {
-        "US0378331005": 0.25,
-        "US5949181045": 0.25,
-        "US02079K3059": 0.20,
-        "US67066G1040": 0.15,
-        "US88160R1014": 0.15
+    # Define four portfolios
+    portfolio1 = {
+        'CSPX.L': 0.5,
+        'SXR8.DE': 0.5
     }
-    # Convert ISINs to tickers for PortfolioAnalyzer
-    tech_portfolio = {isin_to_ticker[isin]: weight for isin, weight in tech_portfolio_isin.items()}
-    analyzer = PortfolioAnalyzer(
-        portfolio_stocks=tech_portfolio,
-        start_date='2024-09-14',
-        end_date=datetime.now().strftime('%Y-%m-%d')
-    )
-    analyzer.run_analysis(generate_html=False)
-    analyzer.plot_daily_cumulative_returns()
-    #analyzer.create_comparison_plots()
+    portfolio2 = {
+        'AAPL': 0.25,
+        'MSFT': 0.25,
+        'GOOGL': 0.20,
+        'NVDA': 0.15,
+        'TSLA': 0.15
+    }
+    portfolio3 = {
+        'VTI': 1.0
+    }
+    portfolio4 = {
+        'SPY': 1.0
+    }
+    # Analyze all portfolios
+    analyzers = []
+    for p in [portfolio1, portfolio2, portfolio3, portfolio4]:
+        analyzer = PortfolioAnalyzer(
+            portfolio_stocks=p,
+            start_date='2025-09-01',
+            end_date=datetime.now().strftime('%Y-%m-%d')
+        )
+        analyzer.fetch_data()
+        analyzer.calculate_portfolio_returns()
+        analyzers.append(analyzer)
+    # Plot all portfolios and benchmark on the same chart
     import matplotlib.pyplot as plt
+    colors = ['blue', 'green', 'orange', 'purple']
+    labels = ['Portfolio 1', 'Portfolio 2', 'Portfolio 3', 'Portfolio 4']
+    plt.figure(figsize=(12, 6))
+    for i, analyzer in enumerate(analyzers):
+        cumulative = (1 + analyzer.portfolio_returns).cumprod() - 1
+        plt.plot(cumulative.index, cumulative * 100, label=labels[i], color=colors[i])
+    cumulative_benchmark = (1 + analyzers[0].benchmark_returns).cumprod() - 1
+    plt.plot(cumulative_benchmark.index, cumulative_benchmark * 100, label='S&P 500', color='red', alpha=0.7)
+    plt.title('Daily Cumulative Returns: 4 Portfolios vs S&P 500')
+    plt.xlabel('Date')
+    plt.ylabel('Cumulative Return (%)')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
     plt.show(block=True)
     input("Press Enter to close the plots...")
