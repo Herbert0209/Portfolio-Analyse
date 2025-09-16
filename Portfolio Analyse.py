@@ -198,7 +198,7 @@ if __name__ == "__main__":
         'MSFT': 0.25,
         'GOOGL': 0.20,
         'NVDA': 0.15,
-        'TSLA': 0.15
+        'TSLA': 0.15,
     }
     portfolio3 = {
         'VTI': 1.0
