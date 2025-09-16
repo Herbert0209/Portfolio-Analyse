@@ -1,4 +1,3 @@
-
 import pandas as pd
 import yfinance as yf
 import numpy as np
@@ -99,7 +98,6 @@ class PortfolioAnalyzer:
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.show()
 
     def create_comparison_plots(self):
         """Create comparison visualizations."""
@@ -155,7 +153,6 @@ class PortfolioAnalyzer:
         ax4.grid(True, alpha=0.3)
         ax4.axhline(y=0, color='black', linestyle='-', alpha=0.5)
         plt.tight_layout()
-        plt.show()
 
     def quick_analysis(self):
         """Quick analysis using QuantStats built-in functions."""
@@ -191,8 +188,12 @@ if __name__ == "__main__":
     }
     analyzer = PortfolioAnalyzer(
         portfolio_stocks=tech_portfolio,
-        start_date='2022-01-01',
-        end_date='2024-01-01'
+        start_date='2024-09-14',
+        end_date=datetime.now().strftime('%Y-%m-%d')
     )
     analyzer.run_analysis(generate_html=False)
     analyzer.plot_daily_cumulative_returns()
+    analyzer.create_comparison_plots()
+    import matplotlib.pyplot as plt
+    plt.show(block=True)
+    input("Press Enter to close the plots...")
