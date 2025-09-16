@@ -177,15 +177,27 @@ class PortfolioAnalyzer:
             print(f"Error during analysis: {e}")
             return None
 
-# Example usage
+# Example ISIN to ticker mapping (add your own as needed)
+isin_to_ticker = {
+    "US0378331005": "AAPL",  # Apple
+    "US5949181045": "MSFT",  # Microsoft
+    "US02079K3059": "GOOGL",  # Alphabet (Google)
+    "US67066G1040": "NVDA",  # NVIDIA
+    "US88160R1014": "TSLA",  # Tesla
+    # Add more ISINs and tickers as needed
+}
+
+# Example usage with ISINs
 if __name__ == "__main__":
-    tech_portfolio = {
-        'AAPL': 0.25,
-        'MSFT': 0.25,
-        'GOOGL': 0.20,
-        'NVDA': 0.15,
-        'TSLA': 0.15
+    tech_portfolio_isin = {
+        "US0378331005": 0.25,
+        "US5949181045": 0.25,
+        "US02079K3059": 0.20,
+        "US67066G1040": 0.15,
+        "US88160R1014": 0.15
     }
+    # Convert ISINs to tickers for PortfolioAnalyzer
+    tech_portfolio = {isin_to_ticker[isin]: weight for isin, weight in tech_portfolio_isin.items()}
     analyzer = PortfolioAnalyzer(
         portfolio_stocks=tech_portfolio,
         start_date='2024-09-14',
@@ -193,7 +205,7 @@ if __name__ == "__main__":
     )
     analyzer.run_analysis(generate_html=False)
     analyzer.plot_daily_cumulative_returns()
-    analyzer.create_comparison_plots()
+    #analyzer.create_comparison_plots()
     import matplotlib.pyplot as plt
     plt.show(block=True)
     input("Press Enter to close the plots...")
